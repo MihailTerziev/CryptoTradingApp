@@ -1,0 +1,16 @@
+{% extends "base/base.html" %}
+{% block content %}
+    <h1 align="center"><span>Crypto</span> Trade</h1>
+    <section style="padding-top: 50px">
+        <div class="login-box">
+            <form action="{% url 'trade-page' %}" method="post">
+                <label style="alignment: center">Choose from your crypto</label>
+{#        {{ form.date_of_birth }}#}
+                <label style="alignment: center">Convert to Crypto</label>
+{#        {{ form.phone_number }}#}
+                <input type="submit" id="btn" value="Trade">
+{#              {% csrf_token %}#}
+            </form>
+        </div>
+    </section>
+{% endblock %}
