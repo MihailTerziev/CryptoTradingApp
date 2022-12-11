@@ -13,13 +13,15 @@
             {% if request.user.is_superuser %}
                 <li><a href="{% url 'add-crypto-page' %}">Create Offer</a></li>
                 <li><a href="{% url 'create-admin-page' %}">Add Admin</a></li>
-                <li><a href="{% url 'users-list-page' %}">Users</a></li>
-                <li><a href="{% url 'staff-list-page' %}">Staff</a></li>
+{#                <li><a href="{% url 'users-list-page' %}">Users</a></li>#}
+{#                <li><a href="{% url 'staff-list-page' %}">Staff</a></li>#}
             {% elif request.user.is_staff %}
                 <li><a href="{% url 'users-list-page' %}">Users</a></li>
             {% endif %}
 
             <li><a href="{% url 'purchase-page' %}">Buy Crypto</a></li>
+            <li><a href="{% url 'sale-page' %}">Sell Crypto</a></li>
+            <li><a href="{% url 'trade-page' %}">Trade</a></li>
             <li><a href="{% url 'wallet-page' %}">Wallet</a></li>
             <li><a href="{% url 'logout-page' %}">Logout</a></li>
             <li style="float:right">Hello, <b><strong>{{ request.user }}</strong></b>!</li>

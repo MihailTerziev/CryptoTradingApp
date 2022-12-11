@@ -15,6 +15,7 @@ Profile Delete Page: http://127.0.0.1:8000/accounts/profile/<int:pk>/delete/
 urlpatterns = (
     path("trade/", trade_page, name="trade-page"),
     path("purchase/", purchase_page, name="purchase-page"),
+    path("sell/", sale_page, name="sale-page"),
     path("balance/", increase_balance_page, name="increase-balance-page"),
     path("search/", search_page, name="search-page"),
     path("wallet/", wallet_page, name="wallet-page"),
@@ -30,3 +31,5 @@ urlpatterns = (
         path("users/", users_list_page, name="users-list-page")
     ]))
 )
+
+from CryptoTradingApp.core.signals import *

@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
 from django.views import generic as views
 from django.urls import reverse_lazy
+from django.db.models.signals import post_save
 from django.contrib.auth.decorators import login_required
 from CryptoTradingApp.accounts.forms import *
 from CryptoTradingApp.crypto.models import *
 from CryptoTradingApp.common.forms import *
+from CryptoTradingApp.core.utils import get_user_crypto_objects_list
 
 
 UserModel = get_user_model()
@@ -46,26 +48,56 @@ class UserDetailsView(views.DetailView):
         return context
 
 
-@login_required(login_url='/login/')  # TODO Implement trade page
+@login_required(login_url='/login/')
 def trade_page(request):
-    return render(request, "users/trade-page.html")
+    if request.method == 'GET':
+        form = TradeCreateForm
+    else:
+        form = TradeCreateForm(request.POST)
+
+        if form.is_valid():
+            form.create_trade(request.user)
+            return redirect('wallet-page')
+
+    context = {
+        'form': form
+    }
+
+    return render(request, "users/trade-page.html", context)
 
 
-def purchase_page(request):  # TODO Implement purchase page
+def purchase_page(request):  # TODO Implement error display
     if request.method == 'GET':
         form = PurchaseCreateForm()
     else:
         form = PurchaseCreateForm(request.POST)
 
         if form.is_valid():
-            form.save()
-            return redirect('index-page')
+            form.create_purchase(request.user)
+            return redirect('wallet-page')
 
     context = {
         'form': form
     }
 
     return render(request, "users/purchase-page.html", context)
+
+
+def sale_page(request):
+    if request.method == 'GET':
+        form = SaleCreateForm()
+    else:
+        form = SaleCreateForm(request.POST)
+
+        if form.is_valid():
+            form.create_sale(request.user)
+            return redirect('wallet-page')
+
+    context = {
+        'form': form
+    }
+
+    return render(request, "users/sale-page.html", context)
 
 
 def increase_balance_page(request):
@@ -109,12 +141,16 @@ def search_page(request):  # TODO Implement search page
     return render(request, "common/search-page.html")
 
 
-def wallet_page(request):
+def wallet_page(request):  # TODO find a way to calculate how many crypto a user owns
+    user_purchases = CryptoPurchase.objects.filter(buyer_id=request.user.pk)
+    user_trades = CryptoTrade.objects.filter(trader_id=request.user.pk)
+    user_sales = CryptoSale.objects.all()
+    user_crypto = get_user_crypto_objects_list(request.user.pk, user_purchases, user_trades, user_sales)
     wallet = CryptoWallet.objects.filter(pk=request.user.pk).get()
 
     context = {
-        "crypto": wallet.crypto_inventory.all(),
-        "current_balance": wallet.balance
+        "crypto": user_crypto,
+        "current_balance": wallet.balance,
     }
 
     return render(request, "users/wallet-page.html", context)

@@ -18,7 +18,3 @@ def add_wallet_when_user_is_created(instance, created, *args, **kwargs):
         owner_id=instance.pk,
         balance=0.00,
     )
-
-
-# TODO Create signal for creating a purchase
-# TODO Create signal for creating a trade

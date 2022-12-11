@@ -62,8 +62,14 @@ class DeleteFormMixin:
 
 class ChoicesEnumMixin:
     @classmethod
-    def choices(cls):
-        return [(x.name, x.value) for x in cls]
+    def choices(cls, add_wallet_balance=False):
+        choices_list = []
+
+        if add_wallet_balance:
+            choices_list = [("wallet_balance", "Crypto wallet balance")]
+
+        choices_list.extend([(x.name, x.value) for x in cls])
+        return choices_list
 
     @classmethod
     def max_len(cls):
