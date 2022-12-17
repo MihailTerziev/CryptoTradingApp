@@ -32,6 +32,11 @@ class UserDeleteView(views.DeleteView):
     model = UserModel
     success_url = reverse_lazy("index-page")
 
+    def form_valid(self, form):
+        wallet = CryptoWallet.objects.filter(owner__exact=self.object).get()
+        wallet.delete()
+        return super().form_valid(form)
+
 
 class UserDetailsView(views.DetailView):
     template_name = "users/details-user-profile-page.html"
@@ -141,7 +146,7 @@ def search_page(request):  # TODO Implement search page
     return render(request, "common/search-page.html")
 
 
-def wallet_page(request):  # TODO find a way to calculate how many crypto a user owns
+def wallet_page(request):
     user_purchases = CryptoPurchase.objects.filter(buyer_id=request.user.pk)
     user_trades = CryptoTrade.objects.filter(trader_id=request.user.pk)
     user_sales = CryptoSale.objects.all()

@@ -39,4 +39,12 @@ class SuperuserCreateForm(auth_forms.UserCreationForm):
             "username": auth_forms.UsernameField
         }
 
-# TODO Implement more forms
+
+# class StaffCreateForm(auth_forms.UserCreationForm):
+#     class Meta:
+#         model = UserModel
+#         fields = ("first_name", "last_name", "username", "email", "date_of_birth", "phone_number", "password1", "password2")
+#
+#         field_classes = {
+#             "username": auth_forms.UsernameField
+#         }

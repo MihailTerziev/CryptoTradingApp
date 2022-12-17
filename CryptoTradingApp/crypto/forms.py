@@ -19,7 +19,6 @@ class CryptoBaseForm(forms.ModelForm):
                     "placeholder": "Crypto Name"
                 }
             ),
-            # "photo": forms.
             "price": forms.TextInput(
                 attrs={
                     "placeholder": "Price $$$"
@@ -44,6 +43,7 @@ class CryptoCreateForm(CryptoBaseForm):
 
 class CryptoEditForm(DisabledFormMixin, CryptoBaseForm):
     disabled_fields = ("name",)
+    # TODO fix bug
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
