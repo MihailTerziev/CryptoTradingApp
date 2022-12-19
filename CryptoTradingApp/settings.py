@@ -29,8 +29,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    "rest_framework",
-
     "CryptoTradingApp.common",
     "CryptoTradingApp.crypto",
     "CryptoTradingApp.accounts"
@@ -144,7 +142,7 @@ LOGIN_REDIRECT_URL = reverse_lazy('index-page')
 # EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
 # EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
 # EMAIL_USE_TSL = os.environ.get("EMAIL_USE_SSL")
-#
+
 # DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL")
 
 LOGGING = {
