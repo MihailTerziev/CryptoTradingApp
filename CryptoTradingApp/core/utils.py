@@ -37,6 +37,32 @@ def get_user_crypto_str_list(user_pk):
     return user_crypto_list
 
 
+def get_owned_crypto_quantity(user_pk, crypto_name, user_purchases, user_trades, user_sales):
+    owned_coins = 0
+
+    if user_purchases:
+        for purchase in user_purchases:
+            if crypto_name == purchase.currency:
+                owned_coins += purchase.quantity
+
+    if user_trades:
+        for trade in user_trades:
+            if crypto_name == trade.traded_currency_one:
+                owned_coins += trade.converted_from_quantity
+            elif crypto_name == trade.traded_currency_two:
+                owned_coins += trade.converted_to_quantity
+
+    if user_sales:
+        for sale in user_sales:
+            if crypto_name == sale.currency:
+                if sale.seller.pk == user_pk:
+                    owned_coins -= sale.quantity
+                elif sale.buyer.pk == user_pk:
+                    owned_coins += sale.quantity
+
+    return owned_coins
+
+
 def get_user_crypto_objects_list(user_pk, user_purchases, user_trades, user_sales):
     wallet = CryptoWallet.objects.filter(pk=user_pk).get()
 
@@ -48,28 +74,7 @@ def get_user_crypto_objects_list(user_pk, user_purchases, user_trades, user_sale
     user_crypto_objects_list = []
 
     for crypto_name, crypto in user_crypto_list:
-        owned_coins = 0
-
-        if user_purchases:
-            for purchase in user_purchases:
-                if crypto_name == purchase.currency:
-                    owned_coins += purchase.quantity
-
-        if user_trades:
-            for trade in user_trades:
-                if crypto_name == trade.traded_currency_one:
-                    owned_coins += trade.converted_from_quantity
-                elif crypto_name == trade.traded_currency_two:
-                    owned_coins += trade.converted_to_quantity
-
-        if user_sales:
-            for sale in user_sales:
-                if crypto_name == sale.currency:
-                    if sale.seller.pk == user_pk:
-                        owned_coins -= sale.quantity
-                    elif sale.buyer.pk == user_pk:
-                        owned_coins += sale.quantity
-
+        owned_coins = get_owned_crypto_quantity(user_pk, crypto_name, user_purchases, user_trades, user_sales)
         user_crypto_objects_list.append([crypto, owned_coins])
 
     return user_crypto_objects_list

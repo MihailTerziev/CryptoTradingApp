@@ -1,7 +1,8 @@
 from django import forms
+from django.shortcuts import render
 from CryptoTradingApp.common.models import *
 from CryptoTradingApp.crypto.models import *
-from CryptoTradingApp.core.utils import get_user_crypto_objects_list, check_if_crypto_in_user_wallet
+from CryptoTradingApp.core.utils import *
 
 
 class SearchCryptoForm(forms.Form):
@@ -26,35 +27,38 @@ class PurchaseCreateForm(forms.ModelForm):
             )
         }
 
-    def create_purchase(self, user):  # TODO implement exception handling
+    def create_purchase(self, request):
         purchase = super().save(commit=False)
+        error_message = None
 
         crypto = CryptoCurrency.objects.filter(name__exact=purchase.currency).get()
-        wallet = CryptoWallet.objects.filter(pk=user.pk).get()
+        wallet = CryptoWallet.objects.filter(pk=request.user.pk).get()
 
         if purchase.payment_method == "wallet_balance":
             if wallet.balance >= crypto.price:
                 wallet.balance -= crypto.price * purchase.quantity
             else:
-                # TODO raise error
-                return
+                error_message = "You don't have enough in your balance to purchase this crypto!!!"
 
-        is_added = False
+        if error_message is None:
+            is_added = False
 
-        for crypto_currency in wallet.crypto_inventory.all():
-            if crypto_currency.name == crypto.name:
-                is_added = True
-                break
+            for crypto_currency in wallet.crypto_inventory.all():
+                if crypto_currency.name == crypto.name:
+                    is_added = True
+                    break
 
-        if not is_added:
-            wallet.crypto_inventory.add(crypto)
+            if not is_added:
+                wallet.crypto_inventory.add(crypto)
 
-        crypto.quantity -= purchase.quantity
-        purchase.buyer = user
+            crypto.quantity -= purchase.quantity
+            purchase.buyer = request.user
 
-        crypto.save()
-        wallet.save()
-        purchase.save()
+            crypto.save()
+            wallet.save()
+            purchase.save()
+
+        return error_message
 
 
 class SaleCreateForm(forms.ModelForm):
@@ -79,28 +83,39 @@ class SaleCreateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["buyer"].queryset = UserModel.objects.all()
 
-    def create_sale(self, user):  # TODO implement exception handling
+    def create_sale(self, request):
         sale = super().save(commit=False)
+        error_message = None
 
-        sale.seller = user
-        seller_wallet = CryptoWallet.objects.filter(pk=user.pk).get()
+        sale.seller = request.user
+        seller_wallet = CryptoWallet.objects.filter(pk=request.user.pk).get()
         buyer_wallet = CryptoWallet.objects.filter(pk=sale.buyer.pk).get()
         sold_crypto = CryptoCurrency.objects.filter(name__exact=sale.currency).get()
 
+        seller_purchases = CryptoPurchase.objects.filter(buyer_id=request.user.pk)
+        seller_trades = CryptoTrade.objects.filter(trader_id=request.user.pk)
+        seller_sales = CryptoSale.objects.all()
+
         if check_if_crypto_in_user_wallet(sale.currency, seller_wallet.crypto_inventory.all()):
-            # TODO check if quantity is less than owned or raise error
+            owned_quantity = get_owned_crypto_quantity(request.user.pk, sale.currency, seller_purchases, seller_trades, seller_sales)
 
-            buyer_wallet.balance -= sold_crypto.price * sale.quantity
-            seller_wallet.balance += sold_crypto.price * sale.quantity
+            if sale.quantity <= owned_quantity:
+                buyer_wallet.balance -= sold_crypto.price * sale.quantity
+                seller_wallet.balance += sold_crypto.price * sale.quantity
 
-            if sold_crypto not in buyer_wallet.crypto_inventory.all():
-                buyer_wallet.crypto_inventory.add(sold_crypto)
+                if sold_crypto not in buyer_wallet.crypto_inventory.all():
+                    buyer_wallet.crypto_inventory.add(sold_crypto)
+            else:
+                error_message = f"You don't own {sale.quantity} {sold_crypto.name}!!! Select less coins."
         else:
-            pass  # TODO raise an error
+            error_message = f"You don't own {sold_crypto.name}!!!"
 
-        seller_wallet.save()
-        buyer_wallet.save()
-        sale.save()
+        if error_message is None:
+            seller_wallet.save()
+            buyer_wallet.save()
+            sale.save()
+
+        return error_message
 
 
 class TradeCreateForm(forms.ModelForm):
@@ -122,16 +137,19 @@ class TradeCreateForm(forms.ModelForm):
             )
         }
 
-    def create_trade(self, user):  # TODO implement exception handling, if user chooses crypto he doesn't own
+    def create_trade(self, request):
         trade = super().save(commit=False)
 
-        trade.trader_wallet = CryptoWallet.objects.filter(pk=user.pk).get()
-        trade.trader = user
+        error_message = None
+        trader_owns_crypto = None
 
-        user_purchases = CryptoPurchase.objects.filter(buyer_id=user.pk)
-        user_trades = CryptoTrade.objects.filter(trader_id=user.pk)
+        trade.trader_wallet = CryptoWallet.objects.filter(pk=request.user.pk).get()
+        trade.trader = request.user
+
+        user_purchases = CryptoPurchase.objects.filter(buyer_id=request.user.pk)
+        user_trades = CryptoTrade.objects.filter(trader_id=request.user.pk)
         user_sales = CryptoSale.objects.all()
-        user_crypto = get_user_crypto_objects_list(user.pk, user_purchases, user_trades, user_sales)
+        user_crypto = get_user_crypto_objects_list(request.user.pk, user_purchases, user_trades, user_sales)
 
         converted_to_crypto = CryptoCurrency.objects.filter(name__exact=trade.traded_currency_two).get()
 
@@ -142,13 +160,20 @@ class TradeCreateForm(forms.ModelForm):
                 trade.converted_from_quantity = -trade.traded_quantity
                 trade.converted_to_quantity = trade.traded_quantity * convert_ratio
 
-                if not check_if_crypto_in_user_wallet(converted_to_crypto.name, trade.trader_wallet.crypto_inventory.all()):
+                if not check_if_crypto_in_user_wallet(converted_to_crypto.name,
+                                                      trade.trader_wallet.crypto_inventory.all()):
                     trade.trader_wallet.crypto_inventory.add(converted_to_crypto)
                     trade.trader_wallet.save()
 
+                trader_owns_crypto = True
                 break
             else:
-                pass
-            # TODO raise error
+                trader_owns_crypto = False
 
-        trade.save()
+        if not trader_owns_crypto:
+            error_message = f"You don't own {trade.traded_currency_one} to convert it in {trade.traded_currency_two}!!!"
+
+        if error_message is None:
+            trade.save()
+
+        return error_message

@@ -37,51 +37,66 @@ def catalogue_page(request):
 
 @login_required(login_url='/login/')
 def trade_page(request):
+    potential_error = None
+
     if request.method == "GET":
         form = TradeCreateForm()
     else:
         form = TradeCreateForm(request.POST)
 
         if form.is_valid():
-            form.create_trade(request.user)
-            return redirect('wallet-page')
+            potential_error = form.create_trade(request)
+
+            if potential_error is None:
+                return redirect('wallet-page')
 
     context = {
-        'form': form
+        'form': form,
+        'error': potential_error
     }
 
     return render(request, "common/trade-page.html", context)
 
 
 def purchase_page(request):
+    potential_error = None
+
     if request.method == "GET":
         form = PurchaseCreateForm()
     else:
         form = PurchaseCreateForm(request.POST)
 
         if form.is_valid():
-            form.create_purchase(request.user)
-            return redirect('wallet-page')
+            potential_error = form.create_purchase(request)
+
+            if potential_error is None:
+                return redirect('wallet-page')
 
     context = {
-        'form': form
+        'form': form,
+        'error': potential_error
     }
 
     return render(request, "common/purchase-page.html", context)
 
 
 def sale_page(request):
+    potential_error = None
+
     if request.method == "GET":
         form = SaleCreateForm()
     else:
         form = SaleCreateForm(request.POST)
 
         if form.is_valid():
-            form.create_sale(request.user)
-            return redirect('wallet-page')
+            potential_error = form.create_sale(request)
+
+            if potential_error is None:
+                return redirect('wallet-page')
 
     context = {
-        'form': form
+        'form': form,
+        'error': potential_error
     }
 
     return render(request, "common/sale-page.html", context)
