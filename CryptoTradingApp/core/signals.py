@@ -19,16 +19,3 @@ def add_wallet_when_user_is_created(instance, created, **kwargs):
         owner_id=instance.pk,
         balance=0.00,
     )
-
-
-# @receiver(signals.post_save, sender=UserModel)
-# def send_email_after_successful_sign_up(instance, created, **kwargs):
-#     if not created:
-#         return
-#
-#     send_mail(
-#         subject="Welcome to CryptoTrade!",
-#         message="Congratulations! You signed-up!",
-#         from_email=None,
-#         recipient_list=(instance.email,)
-#     )

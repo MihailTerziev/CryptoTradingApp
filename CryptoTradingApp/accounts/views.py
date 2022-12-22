@@ -145,11 +145,3 @@ def create_staff_user_page(request):
     }
 
     return render(request, "users/admins/create-staff-page.html", context)
-
-
-# def staff_list_page(request):
-#     return render(request, "users/admins/staff-list-page.html")
-
-
-# def users_list_page(request):
-#     return render(request, "users/admins/users-list-page.html")
